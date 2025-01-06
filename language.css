@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Gotu&display=swap');
+
+body.hindi, body.marathi {
+    font-family: 'Gotu'
+}
+
+
+#languages-section{
+    position: absolute;
+    z-index: 999;
+   width: 100vw;
+    height: 100vh;
+   background-color: #ffffff;
+   padding: 3vw;
+   transform: translate(-200%, 200%);
+      animation: slideIn 01s ease-out forwards;
+      display: none;
+  }
+  
+#languages-section.active {
+    display: block; 
+}
+
+
+  @keyframes slideIn {
+      from {
+          transform: translate(200%,-200%);
+          border-radius: 100%;
+      }
+      50%{
+            border-radius: 90%;
+      }
+      to {
+        border-radius: 0;
+          transform: translate(0, 0);
+      }
+  }
+
+#languages-section #closing{
+    display: flex;
+    justify-content: flex-end;
+    
+}
+#languages-section #closing span{
+    
+    cursor: pointer;
+}
+#languages-section #languages{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    padding: 0 10vw;
+}
+#languages-section #language{
+    display: flex;
+    flex-direction: column;
+    margin-top: 3vw;
+    width: 15vw;
+    line-height: 4vw;
+}
+#languages-section #languages h1{
+    font-size: 3vw;
+}
+#languages-section #language h2{
+    font-size: 2vw;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+#languages-section #language h2:hover{
+    color: #79fd0e;
+    transform: translate(5px,0);
+}
+
