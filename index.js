@@ -31,7 +31,7 @@ const definePassport = require('./config/passport-config');
 definePassport(passport, getUserByUsername, getUserById);
 
 app.use(session({
-    secret: process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SEC,
     resave: false,
     saveUninitialized: false,
     cookie: { 
