@@ -1,6 +1,6 @@
 const containerEl = document.querySelector('.container');
 const checkboxEl = document.querySelector('.form-container .form-row input[type="checkbox"]');
-const nameEl = document.querySelector('.form-container .form-row input[name="name"]');
+const PassEl = document.querySelector('.form-container .form-row input[name="password"]');
 const emailEl = document.querySelector('.form-container .form-row input[name="email"]');
 const submitBtn = document.querySelector('.form-container .form-row input[type="submit"]');
 
@@ -77,10 +77,10 @@ checkboxEl.addEventListener('change', () => {
     createPullingTimeline(state.handClosed, checkboxEl.checked);
 })
 
-nameEl.addEventListener('input', () => {
-    nameValid = nameEl.value.length > 3;
+PassEl.addEventListener('input', () => {
+    nameValid = PassEl.value.length > 3;
     if (nameValid) {
-        nameEl.classList.add("valid");
+        PassEl.classList.add("valid");
         gearsTls.forEach(tl => {
             if (tl.paused()) {
                 tl.play();
@@ -92,7 +92,7 @@ nameEl.addEventListener('input', () => {
             }
         })
     } else {
-        nameEl.classList.remove("valid");
+        PassEl.classList.remove("valid");
         gearsTls.forEach(tl => {
             if (!tl.paused()) {
                 gsap.to(tl, {

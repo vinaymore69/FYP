@@ -7,20 +7,24 @@
     <title>Document</title>
 </head>
 <body>
+
     <div class="container">
         <div class="form-container">
+            <form action="/login" method="post">
             <label class="form-row">
-                <input autocomplete="one-time-code" type="text" id="name" name="name" placeholder="name" required>
+              
+                <input autocomplete="one-time-code" type="email" id="email" name="email" placeholder="Enter your E-mail" required >
             </label>
             <label class="form-row">
-                <input autocomplete="one-time-code" type="email" id="email" name="email" placeholder="e-mail" required >
+                <input autocomplete="one-time-code" type="text" id="name" name="password" placeholder="Enter your Password" required>
             </label>
             <label class="form-row">
-                <input type="checkbox" id="subscribe" name="subscribe"> agree to whatever
+                <input type="checkbox" id="subscribe" name="subscribe"> I agree to the <a href="terms-and-conditions.html">Terms and Conditions</a>
             </label>
             <div class="form-row">
                 <input type="submit" value="submit">
             </div>
+        </form>
         </div>
     
         <svg viewBox="0 0 1000 1000" stroke-linecap="round" stroke-linejoin="round">

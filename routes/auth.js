@@ -1,0 +1,289 @@
+const express = require('express');
+const router = express.Router();
+
+const passport = require('passport');
+const nodemailer = require('nodemailer');
+const bcrypt = require('bcrypt');
+const pg = require('pg');
+
+const { Pool } = pg;
+
+// Assuming you have already set up your PostgreSQL connection pool
+const pool = new Pool({
+    host: 'localhost',
+    user: process.env.DB_USER,
+    port: 5432,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASSWORD,
+    max: 10, // Max number of users
+    idleTimeoutMillis: 30000, // Stay idle for
+    connectionTimeoutMillis: 2000,
+});
+
+// Create transporter for sending email 
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+    },
+    pool: true, // Enable connection pooling
+    maxConnections: 5, // Maximum simultaneous connections
+    maxMessages: 100, // Maximum messages per connection
+    rateDelta: 2000, // Limit messages to one every 2 seconds
+    rateLimit: 1, // Limit of 1 message per interval
+});
+
+router.get('/errorPage', checkNotAuthenticated, (req, res) => {
+    const flashMessage = req.flash('error'); // Fetch flash messages
+    res.send(`
+        <p>You have successfully failed authentication!</p>
+        ${flashMessage.length > 0 ? `<p>Error: ${flashMessage[0]}</p>` : ''}
+    `);
+});
+
+router.post(
+    '/login',
+    checkNotAuthenticated,
+    (req, res, next) => {
+        passport.authenticate('local', (err, user, info) => {
+            if (err) {
+                return next(err); // Handle errors
+            }
+            if (!user) {
+                return res.redirect('/auth/errorPage'); // Handle login failure
+            }
+            req.logIn(user, (err) => {
+                if (err) {
+                    return next(err); // Handle errors during login
+                }
+                // Add custom logic after successful login
+                req.session.partialAuth = false;
+                return res.redirect('/auth/dashboard'); // Handle login success
+            });
+        })(req, res, next); // Pass req, res, next to the middleware
+    }
+);
+
+
+// Protected route example
+router.get('/dashboard', ensureAuthenticated, (req, res) => {
+    if (req.isAuthenticated()) {
+        res.send(`Hello, ${req.user.username}
+            <script>
+            </script>`);
+    } else {
+        res.redirect('/auth/errorPage');
+    }
+});
+
+// Logout route
+router.get('/logout', (req, res) => {
+    req.logout(err => {
+        if (err) return next(err);
+        res.redirect('/');
+    });
+});
+
+
+const calculateAge = require('../custom_modules/calculateAge');
+const sendEmailWithRetry = require('../custom_modules/sendEmailWithRetry');
+
+
+router.post('/signup', async (req, res) => {
+    console.log(req.session);
+    const { email, password, username, first_name, last_name, gender, date, address } = req.body;
+
+    const alreadyExists = await pool.query(`SELECT username FROM signup WHERE email = $1`, [email]);
+
+    if (alreadyExists.rowCount > 0) {
+        return res.status(409).json({ error: `User '${username}' already exists` });
+    }
+
+    req.session.user = username;
+    req.session.email = email;
+    req.session.partialAuth = true;
+
+    console.log(req.session);
+
+    const age = calculateAge(date); //check if greater than 7
+
+    if (age < 7) {
+        return res.status(412).json({ error: `User's age is ${age}. \nIt should be at least 7 years of age to create an Account` });
+    }
+
+    const token = crypto.randomUUID();
+    const verificationUrl = `http://localhost:3000/auth/verify-token?token=${token}`;
+
+    //Mail Options
+    const mailOptions = {
+        from: process.env.EMAIL_FROM,
+        to: email,
+        subject: `Email Verification Link from Sanchi.com`,
+        html: `<p>
+                Click on the link below to verify: 
+                <br>
+                <a href=${verificationUrl} about='_blank'>Verification link</a>
+            </p>`
+    };
+
+    try {
+        await sendEmailWithRetry(transporter, mailOptions);
+        res.redirect('/auth/verifyEmailPage');
+    } catch (err) {
+        res.status(500).send(`An error occurred while sending the verification email. Please try again later.`);
+        console.error(err); // Log error for debugging
+        return;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const values = [first_name, last_name, gender, date, age, address, email, username, hashedPassword, false, token];
+
+    const dbResult = await pool.query(`INSERT INTO signup 
+        (
+            first_name,
+            last_name,
+            gender,
+            date_of_birth,
+            age,
+            address,
+            email,
+            username,
+            password,
+            verified,
+            token
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`, values);
+
+    if (dbResult.rowCount > 0) {
+        console.log('User created successfully!');
+    } else {
+        console.log("Uh oh!");
+    }
+});
+
+router.get('/verifyEmailPage', (req, res) => {
+    if (req.session.email)
+        res.render('emailVerification.ejs', { email: req.session.email });
+    else
+        res.redirect('/signup.html');
+});
+
+router.get('/verify-token', async (req, res, next) => {
+    const { user, email } = req.session;
+    const token = req.query.token;
+
+    if (user && email) {
+        try {
+            const dbTokenRes = await pool.query(
+                `SELECT * FROM signup WHERE username=$1 AND email=$2`,
+                [user, email]
+            );
+
+            if (dbTokenRes.rowCount > 0) {
+                const dbToken = dbTokenRes.rows[0].token;
+
+                // Check if the token matches
+                if (token === dbToken) {
+                    // Update user as verified
+                    const result = await pool.query(
+                        `UPDATE signup SET token='', verified=true WHERE username=$1 AND email=$2 RETURNING *;`,
+                        [user, email]
+                    );
+
+                    if (result.rowCount > 0) {
+                        const updatedUser = result.rows[0];
+
+                        // Automatically log in the user
+                        req.login(updatedUser, (err) => {
+                            if (err) {
+                                console.error(err);
+                                return next(err); // Handle login errors
+                            }
+
+                            // Redirect to dashboard after successful login
+                            req.session.partialAuth = false;
+                            res.redirect('/auth/dashboard');
+                        });
+                    } else {
+                        res.status(500).send('Verification failed.');
+                    }
+                } else {
+                    res.status(400).send('Invalid token.');
+                }
+            } else {
+                res.status(400).send('User not found or already verified.');
+            }
+        } catch (error) {
+            console.error(error);
+            res.status(500).send('Server error.');
+        }
+    } else {
+        res.status(400).send('Session expired or invalid token.');
+    }
+});
+
+
+router.post('/auth/resend-verification', checkNotAuthenticated, async (req, res) => {
+    const { email } = req.session.email;
+
+    const userCheck = await pool.query(`SELECT token FROM signup WHERE email = $1 AND verified_status = false`, [email]);
+
+    if (userCheck.rowCount > 0) {
+        const { verification_token } = userCheck.rows[0];
+        const verificationUrl = `http://localhost:3000/email/confirmation?token=${verification_token}`;
+
+        //Mail Options
+        const mailOptions = {
+            from: process.env.EMAIL_FROM,
+            to: email,
+            subject: `Email Verification Link from Sanchi.com`,
+            html: `<p>
+            Click on the link below to verify: 
+            <br>
+            <a href=${verificationUrl} about='_blank'>Verification link</a>
+            </p>`,
+        };
+
+        try {
+            await sendEmailWithRetry(transporter, mailOptions);
+            res.status(200).send("Verification email resent.");
+        } catch (err) {
+            res.status(500).send(`An error occurred while sending the verification email. Please try again later.`);
+            console.error(err); // Log error for debugging
+            return;
+        }
+    } else {
+        res.status(400).send("Invalid request or email is already verified.");
+    }
+});
+
+function ensureAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        return next(); // User is authenticated, proceed to the next middleware/route
+    }
+
+    //remove this later
+    // Check if the failure was due to email not being verified
+    if (req.session.partialAuth == true) {
+        // Redirect to the email verification page
+        res.redirect('auth/verifyEmailPage');
+    } else {
+        res.redirect(200,'http://localhost:3000/newlogin.html'); // Redirect to login page if not authenticated
+    }
+}
+
+function checkNotAuthenticated(req, res, next) {
+    if (!(req.isAuthenticated())) { //If he is not authenticated
+        // Check if the failure was due to email not being verified
+        if (req.session.partialAuth == true) {
+            // Redirect to the email verification page
+            res.redirect('/auth/verifyEmailPage');
+        } else {
+            next();
+        }
+    } else { 
+        res.redirect('/auth/dashboard');
+    }
+}
+
+module.exports = router;
