@@ -118,12 +118,20 @@
         .add-attachment-btn:hover {
             background-color: #0056b3;
         }
+
+        .valid {
+            border-color: green;
+        }
+
+        .invalid {
+            border-color: red;
+        }
     </style>
 </head>
 
 <body>
     <div class="form-container">
-        <form action="/contact" method="post" enctype="multipart/form-data">
+        <form action="/contact" id="contact-form" method="post" enctype="multipart/form-data">
             <fieldset>
                 <legend>Contact Us</legend>
 
@@ -161,7 +169,8 @@
                 <div id="attachments-container">
                     <div class="file-container">
                         <input type="file" id="attachment-1" name="attachments[]" accept="image/*">
-                        <input type="text" id="filename-1" name="file_names[]" placeholder="Enter file name">
+                        <input type="text" id="filename-1" name="file_names[]"
+                            placeholder="Enter file name (please don't add extension names like .jpg, .png)">
                     </div>
                 </div>
 
@@ -208,6 +217,12 @@
             // Append the new container to the attachments section
             attachmentsContainer.appendChild(fileContainer);
         });
+
+        document.getElementById("contact-form").addEventListener("submit", (e) => {
+            alert("Form data submitted successfully!");
+            form.reset();
+        });
+
     </script>
 </body>
 

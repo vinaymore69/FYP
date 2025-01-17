@@ -1,4 +1,6 @@
 const express = require('express');
+const router = express.Router();
+
 const nodemailer = require('nodemailer');
 const path = require('path');
 const fs = require('fs');
@@ -6,12 +8,11 @@ const multer = require('multer');
 const { Pool } = require('pg');
 const { randomUUID } = require('crypto');  // Correct import
 
-const router = express.Router();
 
 // Initialize disk storage with dynamic filename
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, './uploads/contact_us_message'); // Specify the directory to store files
+        cb(null, 'public/files/uploads/contact_us_message'); // Specify the directory to store files
     },
     filename: (req, file, cb) => {
         // Generate a unique filename for each file
@@ -34,10 +35,6 @@ const pool = new Pool({
     connectionTimeoutMillis: 2000,
 });
 
-router.use(express.static(path.join(__dirname, "public/files")));
-router.use(express.urlencoded({ extended: true }));
-router.use(express.json());
-
 // router.set("view engine","ejs");
 
 // router.get('/', (req, res) => {
@@ -45,6 +42,18 @@ router.use(express.json());
 
 //     res.send();
 // });
+
+
+const sendEmailWithRetry = require('../custom_modules/sendEmailWithRetry');
+
+// Create transporter for sending email
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+    },
+});
 
 router.post('/', upload.array('attachments[]'), async (req, res) => {
     try {
@@ -65,7 +74,6 @@ router.post('/', upload.array('attachments[]'), async (req, res) => {
                 (err) => {
                     if (err)
                         return `fs-error: ${err}`
-                    console.log(`Working?`);
                 });
 
             return uuidWithRandom;  // Append the original file extension
@@ -73,15 +81,6 @@ router.post('/', upload.array('attachments[]'), async (req, res) => {
 
         // Prepare file names (UUIDs) for database storage
         const fileNamesInDb = uuidFileNames.length ? uuidFileNames : null;
-
-        // Create transporter for sending email
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
-        });
 
         const emailBody = `You have received a message from ${first_name} ${last_name},\n${message}`;
 
@@ -97,8 +96,14 @@ router.post('/', upload.array('attachments[]'), async (req, res) => {
             })),
         };
 
-        const info = await transporter.sendMail(mailOptions);
-        console.log('Email sent:', info.messageId);
+        try {
+            await sendEmailWithRetry(transporter, mailOptions);
+            res.status(200).send("Your email has been sent.");
+        } catch (err) {
+            res.status(500).send(`An error occurred while sending the  email. Please try again later.`);
+            console.error(err); // Log error for debugging
+            return;
+        }
 
         // Insert data into the database, storing only the file names (UUID4)
         const query = `INSERT INTO contact_us_messages 
@@ -117,15 +122,12 @@ router.post('/', upload.array('attachments[]'), async (req, res) => {
         const result = await pool.query(query, data);
 
         if (result.rowCount > 0) {
-            // If rowCount is greater than 0, the insert was successful
-            res.status(200).send(`<p>Email sent and data saved successfully!<br><a href='http://localhost:3000/index.html'>Go to home page here</a></p>`);
+            console.log('Data stored Succesfully!');
         } else {
-            // If rowCount is 0, no rows were inserted
-            res.status(400).send('<p>Failed to save message to the database!<br><a href="http://localhost:3000/contact.html">Go back</a></p>');
+            console.log('Data not saved Succesfully :-(');
         }
     } catch (error) {
         console.error('Error:', error);
-        res.status(500).send(`<p>An error occurred!<br><a href='http://localhost:3000/contact.html'>Go back</a></p>`);
     }
 });
 

@@ -2,6 +2,8 @@ function calculateAge(dateStr) {
     let strDate, strMonth, strYear;
     let age = 0;
 
+    console.log(dateStr);
+
     if(dateStr.length === 10) {
         const splitArr = dateStr.split('-');
         strYear = parseInt(splitArr[0], 10);
@@ -25,7 +27,5 @@ function calculateAge(dateStr) {
 
     return age;
 }
-
-calculateAge("2004-02-06");
 
 module.exports=calculateAge;

@@ -36,8 +36,8 @@ const transporter = nodemailer.createTransport({
 
 router.get('/errorPage', checkNotAuthenticated, (req, res) => {
     const flashMessage = req.flash('error'); // Fetch flash messages
+
     res.send(`
-        <p>You have successfully failed authentication!</p>
         ${flashMessage.length > 0 ? `<p>Error: ${flashMessage[0]}</p>` : ''}
     `);
 });
@@ -45,37 +45,18 @@ router.get('/errorPage', checkNotAuthenticated, (req, res) => {
 router.post(
     '/login',
     checkNotAuthenticated,
-    (req, res, next) => {
-        passport.authenticate('local', (err, user, info) => {
-            if (err) {
-                return next(err); // Handle errors
-            }
-            if (!user) {
-                return res.redirect('/auth/errorPage'); // Handle login failure
-            }
-            req.logIn(user, (err) => {
-                if (err) {
-                    return next(err); // Handle errors during login
-                }
-                // Add custom logic after successful login
-                req.session.partialAuth = false;
-                return res.redirect('/auth/dashboard'); // Handle login success
-            });
-        })(req, res, next); // Pass req, res, next to the middleware
+    passport.authenticate('local', {
+        failureRedirect: '/auth/errorPage',
+        successRedirect: '/user/dashboard',
+        failureFlash: true, // Enable error messages
+    }),
+    (req, res) => {
+        // Post-login custom logic can still be added here if needed
+        if (req.user.partialAuth) {
+            return res.redirect('/auth/verifyEmailPage'); // Redirect unverified users
+        }
     }
 );
-
-
-// Protected route example
-router.get('/dashboard', ensureAuthenticated, (req, res) => {
-    if (req.isAuthenticated()) {
-        res.send(`Hello, ${req.user.username}
-            <script>
-            </script>`);
-    } else {
-        res.redirect('/auth/errorPage');
-    }
-});
 
 // Logout route
 router.get('/logout', (req, res) => {
@@ -84,7 +65,6 @@ router.get('/logout', (req, res) => {
         res.redirect('/');
     });
 });
-
 
 const calculateAge = require('../custom_modules/calculateAge');
 const sendEmailWithRetry = require('../custom_modules/sendEmailWithRetry');
@@ -161,7 +141,7 @@ router.post('/signup', async (req, res) => {
     }
 });
 
-router.get('/verifyEmailPage', (req, res) => {
+router.get('/verifyEmailPage', ensurePartiallyAuthenticated, (req, res) => {
     if (req.session.email)
         res.render('emailVerification.ejs', { email: req.session.email });
     else
@@ -202,7 +182,7 @@ router.get('/verify-token', async (req, res, next) => {
 
                             // Redirect to dashboard after successful login
                             req.session.partialAuth = false;
-                            res.redirect('/auth/dashboard');
+                            res.redirect('/user/dashboard');
                         });
                     } else {
                         res.status(500).send('Verification failed.');
@@ -215,13 +195,16 @@ router.get('/verify-token', async (req, res, next) => {
             }
         } catch (error) {
             console.error(error);
-            res.status(500).send('Server error.');
+            res.status(503).send("Service Unavailable: Database not connected");
         }
     } else {
         res.status(400).send('Session expired or invalid token.');
     }
 });
 
+router.post('/reset-password', (req,res) => {
+    res.status(200).json({message:'Resetting...'});
+});
 
 router.post('/auth/resend-verification', checkNotAuthenticated, async (req, res) => {
     const { email } = req.session.email;
@@ -266,9 +249,17 @@ function ensureAuthenticated(req, res, next) {
     // Check if the failure was due to email not being verified
     if (req.session.partialAuth == true) {
         // Redirect to the email verification page
-        res.redirect('auth/verifyEmailPage');
+        res.redirect('/auth/verifyEmailPage');
     } else {
-        res.redirect(200,'http://localhost:3000/newlogin.html'); // Redirect to login page if not authenticated
+        res.redirect('http://localhost:3000/newlogin.html'); // Redirect to login page if not authenticated
+    }
+}
+
+function ensurePartiallyAuthenticated(req, res, next) {
+    if (req.session.partialAuth == true) {
+        next();
+    } else {
+        res.redirect('/newlogin.html');
     }
 }
 
@@ -281,9 +272,10 @@ function checkNotAuthenticated(req, res, next) {
         } else {
             next();
         }
-    } else { 
-        res.redirect('/auth/dashboard');
+    } else {
+        res.redirect('/user/dashboard');
     }
 }
 
 module.exports = router;
+module.exports.ensureAuthenticated = ensureAuthenticated;

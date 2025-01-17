@@ -7,8 +7,9 @@ function definePassport(passport, getUserByUsername, getUserById) {
         try {
             // Retrieve user by email using the provided function
             const user = await getUserByUsername(username);
-            if (!user) {
-                return done(null, false, { message: 'No user with that email' });
+            
+            if(!user) {
+                return done(null, false, {message: 'User does not exist'});
             }
 
             // Compare hashed password
@@ -17,7 +18,12 @@ function definePassport(passport, getUserByUsername, getUserById) {
                 return done(null, false, { message: 'Incorrect password' });
             }
 
-            console.log("Initialization: ", user);
+            // Check if user is verified
+            if (!user.verified) {
+                // Custom handling for unverified users
+                return done(null, { ...user, partialAuth: true }, { message: 'Account not verified' });
+            }
+
 
             // Authentication successful (will go to serializeUser and desirialzeUser for session storage)
             return done(null, user);

@@ -1,6 +1,8 @@
 .notesApp {
   display: flex;
   height: 100vh;
+  width: 100%;
+  font-family: 'poppins';
 }
 
 .sidebar {
@@ -16,8 +18,14 @@
   background-color: #4caf50;
   color: white;
   border: none;
-  padding: 10px;
+  width: 2vw;
+  height: 2vw;
+   /* padding: 10px; */
   cursor: pointer;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   transition: transform 0.3s ease;
 }
 
@@ -33,10 +41,11 @@
 }
 
 .colorBlock {
-  width: 40px;
-  height: 40px;
+  width: 1.8vw;
+  height: 3.6vh;
   border-radius: 50%;
   cursor: pointer;
+  border-radius: 50px;
 }
 
 .noteArea {
@@ -46,37 +55,27 @@
   flex-wrap: wrap;
   gap: 20px;
   align-content: flex-start;
-}
+  flex-direction: row;
+  width: 100%;
+  /* background-color: #5a54e0; */
+}  
 
 .noteBox {
   width: 200px;
   height: 200px;
-  padding: 10px;
+  border-radius: 20px;
+  padding: 2vw;
   cursor: pointer;
   overflow: hidden;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
+  box-shadow: rgba(46, 240, 130, 0.4) 5px 5px, rgba(27, 228, 104, 0.3) 10px 10px, rgba(114, 246, 167, 0.2) 15px 15px, rgba(255, 255, 255, 0) 20px 20px, rgba(255, 255, 255, 0) 25px 25px;
 }
 
 .noteBox:hover {
-  transform: scale(1.05);
+  transform: translateY(-8px);
 }
 
-.noteModal {
-  width: 50vw;
-  height: 50vh;
-}
-
-.noteTextarea {
-  width: 100%;
-  height: 70%;
-  margin-bottom: 20px;
-  background-color: transparent;
-  border: 1px solid #ccc;
-  resize: none;
-}
-
-/* Modal overlay */
 .noteModal {
   position: fixed;
   top: 0;
@@ -91,7 +90,6 @@
   visibility: hidden; /* Initially hidden */
   opacity: 0;
   transition: opacity 0.3s ease, visibility 0.3s ease;
-
 }
 
 /* When the modal is active (visible) */
@@ -101,8 +99,8 @@
 }
 
 /* Modal content (the actual modal box) */
-.noteModalContent {
-  position: relative;
+.noteEditor {
+  position: absolute;
   background-color: #fff;
   padding: 20px;
   border-radius: 8px;
@@ -114,25 +112,23 @@
   z-index: 10000; /* Ensure it's above the overlay */
   text-align: center;
   padding-left: 1vw;
+  transform: translate(-50%, -50%);
   top: 50%;
   left: 50%;
-
 }
 
 /* Textarea inside the modal */
-.noteModalContent textarea {
-  width: 420px;
-  height: 300px;
-  padding: 10px;
-  font-size: 16px;
-  border: 2px solid #ccc;
-  border-radius: 4px;
-  outline: none;
+.noteEditor textarea {
+  width: 100%;
+  height: 70%;
+  margin-bottom: 20px;
+  background-color: transparent;
+  border: 1px solid #ccc;
   resize: none;
 }
 
 /* Modal buttons */
-.noteModalContent button {
+.noteEditor button {
   margin-top: 10px;
   padding: 10px 20px;
   background-color: #6c63ff;
@@ -142,14 +138,14 @@
   cursor: pointer;
 }
 
-.noteModalContent button.destructive {
+.noteEditor button.destructive {
   background-color: #e74c3c; /* Red for destructive actions */
 }
 
-.noteModalContent button:hover {
+.noteEditor button:hover {
   background-color: #5a54e0;
 }
 
-.noteModalContent button.destructive:hover {
+.noteEditor button.destructive:hover {
   background-color: #c0392b;
 }

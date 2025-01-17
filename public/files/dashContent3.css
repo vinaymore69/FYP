@@ -1,106 +1,151 @@
-#notes-outer {
+.notesApp {
     display: flex;
-    flex-direction: row;
-    justify-content: center;
-    width: 100%;
     height: 100vh;
+    width: 100%;
+    font-family: 'poppins';
 }
 
-#notes-sidebar {
+.sidebar {
+    width: 60px;
+    background-color: #f0f0f000;
+    padding: 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 10vw;
-    height: 50vh;
 }
 
-#add-note {
-    display: flex;
-    color: aliceblue;
-    background-color: black;
-    padding: 1vw;
-    border-radius: 50%;
-    font-size: 1.5vw;
+.addButton {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    width: 2vw;
+    height: 2vw;
+     /* padding: 10px; */
     cursor: pointer;
-    transition: transform 0.3s ease-in-out;
-    position: fixed;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.3s ease;
 }
 
 .rotate {
-    transform: rotate(360deg);
+    transform: rotate(45deg);
 }
 
-.hidden {
-    display: none;
+.colorPicker {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
 }
 
-#notes-sidebar div {
-    width: 1.4vw;
-    height: 1.4vw;
+.colorBlock {
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    margin: 1vw;
+    cursor: pointer;
+    border-radius: 50px;
+}
+
+.noteArea {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-content: flex-start;
+    flex-direction: row;
+    width: 100%;
+    /* background-color: #5a54e0; */
+}
+
+.noteBox {
+    width: 200px;
+    height: 200px;
+    border-radius: 20px;
+    padding: 2vw;
+    cursor: pointer;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    box-shadow: rgba(46, 240, 130, 0.4) 5px 5px, rgba(27, 228, 104, 0.3) 10px 10px, rgba(114, 246, 167, 0.2) 15px 15px, rgba(255, 255, 255, 0) 20px 20px, rgba(255, 255, 255, 0) 25px 25px;
+}
+
+.noteBox:hover {
+    transform: translateY(-8px);
+}
+
+.noteModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5); /* Dimmed background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    visibility: hidden; /* Initially hidden */
+    opacity: 0;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+/* When the modal is active (visible) */
+.noteModal.active {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Modal content (the actual modal box) */
+.noteEditor {
+    position: absolute;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 500px;
+    height: 400px;
+    overflow: hidden; /* In case content overflows */
+    z-index: 10000; /* Ensure it's above the overlay */
+    text-align: center;
+    padding-left: 1vw;
+    transform: translate(-50%, -50%);
+    top: 50%;
+    left: 50%;
+}
+
+/* Textarea inside the modal */
+.noteEditor textarea {
+    width: 100%;
+    height: 70%;
+    margin-bottom: 20px;
+    background-color: transparent;
+    border: 1px solid #ccc;
+    resize: none;
+}
+
+/* Modal buttons */
+.noteEditor button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #6c63ff;
+    color: white;
+    border: none;
+    border-radius: 4px;
     cursor: pointer;
 }
 
-#notes-main {
-    display: flex;
-    flex-direction: column; 
-    padding: 0vw 2vw;
-    width: 90vw;
-    height: auto;
-}
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-/* Apply transition effect for smooth shifting */
-.note-box {
-    width: 13vw;
-    height: 13vw;
-    background-color: #FEC9A7;
-    border-radius: 1vw;
-    margin-bottom: 1vw; /* Ensure vertical spacing between rows */
-    transition: transform 0.3s ease-out;
-    flex-shrink: 0; /* Prevent shrinking when flex-wrapping */
+.noteEditor button.destructive {
+    background-color: #e74c3c; /* Red for destructive actions */
 }
 
-
-/* Add animation for sliding in the first note */
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateX(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+.noteEditor button:hover {
+    background-color: #5a54e0;
 }
 
-/* Newly added note animation */
-.new-note {
-    animation: slideIn 0.3s ease-out;
-}
-
-#add-note-color1,
-#add-note-color2,
-#add-note-color3,
-#add-note-color4{
-    position: fixed;
-}
-
-#add-note-color1{
-    top: 30vh;
-}#add-note-color2{
-    top: 35vh;
-}#add-note-color3{
-    top: 40vh;
-}#add-note-color4{
-    top:45vh;
+.noteEditor button.destructive:hover {
+    background-color: #c0392b;
 }

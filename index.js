@@ -17,7 +17,7 @@ require('dotenv').config(); // Load environment variables
 // Fetch user by email
 const getUserByUsername = async (username) => {
     const result = await pool.query(`SELECT * FROM signup WHERE username = $1`, [username]);
-    return result.rows[0]; // Return user object if found
+    return result.rows[0]; // Return user object if found 
 };
 
 // Fetch user by ID
@@ -34,12 +34,12 @@ app.use(session({
     secret: process.env.SESSION_SEC,
     resave: false,
     saveUninitialized: false,
-    cookie: { 
-        httpOnly:true,
+    cookie: {
+        httpOnly: true,
         secure: false,
         maxAge: 7 * 24 * 60 * 60 * 1000 //7 days
     }
-  }))
+}))
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -59,18 +59,20 @@ const pool = new Pool({
 
 // Middleware to protect certain static files
 app.use((req, res, next) => {
-    const restrictedPaths = ['/newlogin.html', '/signup.html'];
-    if (req.session.partialAuth == true) { //User has not verifed yet
-        if (restrictedPaths.some(path => req.originalUrl.includes(path))) {
+    const restrictedPaths = ['/newlogin.html', '/signup.html', '/dashboard.html', '/emailVerification.ejs']; //Purely for Good User Experience
+
+    if (restrictedPaths.some(path => req.originalUrl.includes(path))) {
+        if (req.session.partialAuth == true) { //User has not verifed yet
             return res.redirect('/auth/verifyEmailPage');
-        }
-    } else if(req.user) {
-        if (restrictedPaths.some(path => req.originalUrl.includes(path))) {
-            return res.redirect('/auth/dashboard');
+        } else if (req.user) {
+            return res.redirect('/user/dashboard');
+        } else if (req.originalUrl.includes('/dashboard.html')) {
+            return res.redirect('/user/dashboard');
         }
     }
     next();
 });
+
 
 app.use(express.static(path.join(__dirname, "public/files")));
 app.use(express.urlencoded({ extended: true }));
@@ -81,6 +83,9 @@ app.use('/auth', authRouter);
 
 const contactRouter = require('./routes/contact');
 app.use('/contact', contactRouter);
+
+const userRouter = require('./routes/user');
+app.use('/user', userRouter);
 
 // Start the server
 app.listen(3000, () => console.log("Server running at http://localhost:3000"));

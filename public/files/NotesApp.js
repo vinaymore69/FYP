@@ -1,99 +1,151 @@
-document.addEventListener("DOMContentLoaded", function () {
-    const colors = ['#FEC9A7', '#A7FEC9', '#C9A7FE', '#A7C9FE'];
-    let notes = [];
+document.addEventListener("DOMContentLoaded", async () => {
+    const addButton = document.getElementById("addButton");
+    const colorPicker = document.getElementById("colorPicker");
+    const noteArea = document.getElementById("noteArea");
+    const noteEditor = document.getElementById("noteEditor");
+    const noteTextarea = document.getElementById("noteTextarea");
+    const updateButton = document.getElementById("updateButton");
+    const deleteButton = document.getElementById("deleteButton");
+    const closeEditor = document.getElementById("closeEditor");
+
     let selectedNote = null;
 
-    const addButton = document.getElementById('addButton');
-    const colorPicker = document.getElementById('colorPicker');
-    const noteArea = document.getElementById('noteArea');
-    const noteModal = document.getElementById('noteModal');
-    const noteTextarea = document.getElementById('noteTextarea');
-    const updateButton = document.getElementById('updateButton');
-    const deleteButton = document.getElementById('deleteButton');
+    // Fetch the notes from the server 
+    let notesCount = 1; //Default
+    try {
+        const response = await fetch('/user/db_notes');
+        
+        const data = await response.json();
+        if (data.count) {
+            notesCount = data.count;
 
-    // Toggle the color picker visibility
-    addButton.addEventListener('click', function () {
-        colorPicker.style.display = colorPicker.style.display === 'none' ? 'block' : 'none';
-    });
+            console.log(data);
 
-    // Add a new note with a selected color
-    const addNote = (color) => {
-        const newNote = {
-            id: Date.now(),
-            content: '',
-            color: color
-        };
-        notes.push(newNote);
-        displayNotes();
-        colorPicker.style.display = 'none';
-    };
+            let i = 0;
+            while (i < data.note_content_array.length) {
+                let j = i + 1;
+                createNote(data.note_color_array[i], j, data.note_content_array[i]);
+                i++;
+            }
+        } else {
+            notesCount = 1; // Set notesCount to 1 if did not find
+        }
+    } catch (error) {
+    console.error('Error fetching note count:', error);
+}
 
-    // Display the list of notes
-    const displayNotes = () => {
-        noteArea.innerHTML = '';
-        notes.forEach(note => {
-            const noteDiv = document.createElement('div');
-            noteDiv.className = 'noteBox';
-            noteDiv.style.backgroundColor = note.color;
-            noteDiv.innerText = note.content || 'Click to edit...';
+console.log(`Note count: ${notesCount}`); // Debugging
 
-            // Open the note modal when clicking on a note
-            noteDiv.addEventListener('click', function () {
-                openNoteModal(note);
-            });
-            noteArea.appendChild(noteDiv);
+try {
+
+} catch (error) {
+    console.error(error);
+    alert('Please Refresh your page');
+}
+
+// Show/hide color picker
+addButton.addEventListener("click", () => {
+    colorPicker.style.display = colorPicker.style.display === "none" ? "flex" : "none";
+    addButton.classList.toggle("rotate");
+});
+
+// Create a new note
+colorPicker.addEventListener("click", (event) => {
+    if (event.target.classList.contains("colorBlock")) {
+        const color = event.target.style.backgroundColor;
+        createNote(color, notesCount);
+    }
+});
+
+// Function to create a new note
+function createNote(color, id, textContent=null) {
+    const noteBox = document.createElement("div");
+    noteBox.className = "noteBox";
+    noteBox.id = id;
+    noteBox.style.backgroundColor = color;
+
+    console.log(textContent)
+    if(textContent) {
+        noteBox.innerText = textContent;
+    }
+
+    noteBox.addEventListener("click", () => openEditor(noteBox));
+
+    noteArea.appendChild(noteBox);
+    colorPicker.style.display = "none";
+    addButton.classList.remove("rotate");
+}
+
+// Open the note editor
+function openEditor(noteBox) {
+    selectedNote = noteBox;
+    noteTextarea.value = noteBox.textContent || "";
+    noteEditor.style.display = "block";
+    noteTextarea.focus();
+}
+
+// Update the note
+updateButton.addEventListener("click", async () => {
+    if (selectedNote) {
+        selectedNote.textContent = noteTextarea.value;
+        noteEditor.style.display = "none";
+
+        // Fetch the computed style of the div
+        const computedStyle = window.getComputedStyle(selectedNote);
+
+        // Extract the background color
+        const selectedNote_backgroundColor = computedStyle.backgroundColor;
+        const note_id = selectedNote.id;
+
+        console.log(selectedNote_backgroundColor);
+        await fetch('/user/notes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                note_id: note_id,
+                note_color: selectedNote_backgroundColor,
+                note_content: noteTextarea.value
+            }),
         });
-    };
 
-    // Open the note modal to edit the note
-    const openNoteModal = (note) => {
-        selectedNote = note;
-        noteModal.classList.add('active');  // Add 'active' class to show modal
-        noteTextarea.value = note.content;
-        noteTextarea.focus();
-        noteTextarea.setAttribute('placeholder','Enter your data');
-    };
-
-    // Close the note modal
-    const closeNoteModal = () => {
         selectedNote = null;
-        noteModal.classList.remove('active');  // Remove 'active' class to hide modal
-    };
 
-    // Update the selected note content
-    const updateNote = () => {
-        if (selectedNote) {
-            selectedNote.content = noteTextarea.value;
-            displayNotes();
-        }
-        closeNoteModal();
-    };
+    }
+});
 
-    // Delete the selected note
-    const deleteNote = () => {
-        if (selectedNote) {
-            notes = notes.filter(note => note.id !== selectedNote.id);
-            displayNotes();
-        }
-        closeNoteModal();
-    };
+// Delete the note
+deleteButton.addEventListener("click", async () => {
+    if (selectedNote) {
+        noteArea.removeChild(selectedNote);
+        noteEditor.style.display = "none";
 
-    // Event listeners for update and delete buttons
-    updateButton.addEventListener('click', updateNote);
-    deleteButton.addEventListener('click', deleteNote);
+        // Fetch the computed style of the div
+        const computedStyle = window.getComputedStyle(selectedNote);
 
-    // Event listeners for the color blocks
-    const colorBlocks = document.querySelectorAll('.colorBlock');
-    colorBlocks.forEach((block, index) => {
-        block.addEventListener('click', function () {
-            addNote(colors[index]);
+        // Extract the background color
+        const selectedNote_backgroundColor = computedStyle.backgroundColor;
+
+        const note_id = selectedNote.id;
+
+        console.log(selectedNote_backgroundColor);
+
+        await fetch('/user/deleteNote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                note_id: note_id,
+                note_color: selectedNote_backgroundColor,
+                note_content: noteTextarea.value
+            }),
         });
-    });
 
-    // Close modal when clicking outside of it
-    noteModal.addEventListener('click', function (e) {
-        if (e.target === noteModal) {
-            closeNoteModal();
-        }
-    });
+        selectedNote = null;
+    }
+});
+
+// Close the note editor
+closeEditor.addEventListener("click", () => {
+    noteEditor.style.display = "none";
+    selectedNote = null;
+});
 });
