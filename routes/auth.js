@@ -202,11 +202,107 @@ router.get('/verify-token', async (req, res, next) => {
     }
 });
 
-router.post('/reset-password', (req,res) => {
-    res.status(200).json({message:'Resetting...'});
+router.post('/reset-password', async (req, res) => {
+    const { email, new_password } = req.body;
+
+    const result = await pool.query("SELECT email, verified FROM signup WHERE email=$1", [email]);
+
+    if ((result.rows[0].email == email) && result.rows[0].verified == true) {
+        const reset_token = crypto.randomUUID();
+        const verificationUrl = `http://localhost:3000/auth/verify-reset-token?token=${reset_token}`;
+
+        //Mail Options
+        const mailOptions = {
+            from: process.env.EMAIL_FROM,
+            to: email,
+            subject: `Email Reset Link from Sanchi.com`,
+            html: `<p>
+            Click on the link below to Reset your Password: 
+            <br>
+            <a href=${verificationUrl} about='_blank'>Verification link</a>
+            </p>`,
+        };
+
+        await sendEmailWithRetry(transporter, mailOptions);
+        res.status(200).json({ message: "Verification Email Sent!" });
+
+        req.session.email = email; //Initializing to verify the token so that I can retrieve it in verify-reset-token
+
+        const response = await pool.query(`INSERT INTO signup_backup (user_id, email, new_password, reset_token) 
+            SELECT id, email, $1, $2
+            FROM signup 
+            WHERE email = $3;
+            `,
+            [
+                new_password,
+                reset_token,
+                email
+            ]);
+
+        if (response.rowCount > 0) {
+            console.log("Uploaded successfully!");
+        }
+
+    } else {
+        res.status(412).json({ message: "Email not found!\n Make sure you are using correct email ID" });
+    }
 });
 
-router.post('/auth/resend-verification', checkNotAuthenticated, async (req, res) => {
+router.get('/verify-reset-token', async (req, res) => {
+    const resetToken = req.query.token;
+
+    console.log("req.query.token: ", resetToken);
+
+    try {
+        const resetTokenRes = await pool.query(
+            `SELECT * FROM signup_backup WHERE reset_token=$1`,
+            [resetToken]
+        );
+
+        if (resetTokenRes.rowCount > 0) {
+            const resetDbToken = resetTokenRes.rows[0].reset_token;
+            const newPassword = resetTokenRes.rows[0].new_password;
+            const email = resetTokenRes.rows[0].email;
+
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+            // Check if the token matches
+            if (resetDbToken === resetToken) {
+                // Update user as verified
+                const result = await pool.query(
+                    `UPDATE signup SET password=$1 WHERE email=$2 RETURNING *`,
+                    [hashedPassword, email]
+                );
+
+                if (result.rowCount > 0) {
+                    const updatedUser = result.rows[0];
+
+                    // Automatically log in the user
+                    req.login(updatedUser, (err) => {
+                        if (err) {
+                            console.error(err);
+                            return next(err); // Handle login errors
+                        }
+
+                        res.redirect('/user/dashboard');
+                    });
+                } else {
+                    res.status(500).send('Re-verification failed.');
+                }
+            } else {
+                res.status(400).send('Invalid token.');
+            }
+        } else {
+            res.status(400).send('Could not find your record');
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(503).send("Service Unavailable: Database not connected");
+    }
+
+});
+
+router.post('/resend-verification', checkNotAuthenticated, async (req, res) => {
     const { email } = req.session.email;
 
     const userCheck = await pool.query(`SELECT token FROM signup WHERE email = $1 AND verified_status = false`, [email]);

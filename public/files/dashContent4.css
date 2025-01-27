@@ -52,3 +52,13 @@
   #video-panel-button:hover {
     background: #68b2a5;
   }
+
+  #video-panel-select {
+    width: 100%;
+    padding: 0.8vw;
+    font-size: 1vw;
+    border: 1px solid #ccc;
+    border-radius: 0.3vw;
+    box-sizing: border-box;
+}
+

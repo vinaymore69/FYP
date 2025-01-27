@@ -1,3 +1,7 @@
+:root{
+    --bpPrimary-600: #65fb65;
+}
+
 nav{
     padding: 2vw 2vw;
      width: 100%;
@@ -25,21 +29,31 @@ nav{
      overflow: hidden;
      cursor: pointer;
  }
- 
- #nav-part2 h4 a{
-     color: #1d1d1db3;
-     text-decoration: none;
-     z-index: 999;
-     position: relative;
-     transition: all 0.5s ease-in-out;
- 
- }
- #nav-part2 h4:hover a{
- 
-     color: aliceblue;
- 
- }
- 
+ #nav-part2 h4 a {
+    color: #1d1d1db3;
+    text-decoration: none;
+    z-index: 999;
+    position: relative;
+    transition: all 0.5s ease-in-out;
+    display: flex; /* Ensures proper alignment of text and icon */
+    align-items: center; /* Vertically centers the icon and text */
+    gap: 8px; /* Adds space between the icon and text */
+}
+
+#nav-part2 h4:hover a {
+    color: aliceblue;
+}
+
+#nav-part2 h4 a span.material-symbols-outlined {
+    font-size: 20px; /* Adjust icon size if needed */
+    color: inherit; /* Ensures the icon color matches the text color */
+    transition: all 0.3s ease-in-out; /* Adds transition for smooth color change */
+}
+
+#nav-part2 h4:hover a span.material-symbols-outlined {
+    color: rgb(133, 249, 135); /* Ensures the icon changes color on hover */
+}
+
 
  
  #nav-part2 h4 select:focus{
@@ -130,5 +144,13 @@ nav{
     #menu-icon{
         display: block;
     }
+    
+}
+
+
+.bpContainer{
+    height: 10vw;
+    width: 20vw;
+    transition: all 0.5s ease-in-out;
     
 }

@@ -87,8 +87,9 @@ function openEditor(noteBox) {
 // Update the note
 updateButton.addEventListener("click", async () => {
     if (selectedNote) {
-        selectedNote.textContent = noteTextarea.value;
         noteEditor.style.display = "none";
+        
+        selectedNote.textContent = noteTextarea.value;
 
         // Fetch the computed style of the div
         const computedStyle = window.getComputedStyle(selectedNote);

@@ -1,323 +1,141 @@
-// gsap.registerPlugin(ScrollTrigger);
-
-// const demoVideo1 = document.getElementById("demovideo1");
-// const demoVideo1Context =demoVideo1.getContext("2d");
-
-// demoVideo1.height = window.innerHeight;
-// demoVideo1.width = window.innerWidth;
-
-
-// const demoVideo1Info={
-//     totalFrames: 134,
-//     totalTime: 5.44,
-//     images: [],
-//     currentFrame: 0,
-//     currentImage: (index) => `https://thisismagma.com/assets/home/lore/seq/${index}.webp?2`, //error
-
-// };
-
-
-
-// for(let i=1; i<=demoVideo1Info.totalFrames; i++){
-//     const img=new Image();
-//     img.src=demoVideo1Info.currentImage(i);
-//     demoVideo1Info.images.push(img);
-// }
-
-
-// const endValue = demoVideo1Info.totalFrames * demoVideo1Info.totalTime;
-// gsap.to(demoVideo1Info, {
-//   currentFrame: demoVideo1Info.totalFrames,
-//   snap: 'currentFrame',
-//   ease: 'none',
-//   scrollTrigger: {
-//     trigger: demoVideo1,
-//     start: 'top center',
-//     end: `+=${endValue}`,
-//     scrub: true,
-//     // pin: true, 
-//     pinSpacing: false,
-//     markers: true,
-//     onLeave: () => {
-//       gsap.set(demoVideo1, { clearProps: 'all' }); // Unpin the element
-//     },
-//   },
-//   onUpdate: render,
-// });
-
-
-// demoVideo1Info.images[0].onload =() => {
-//     demoVideo1Context.drawImage(
-//         demoVideo1Info.images[0]
-//         ,0
-//         ,0
-//     );
-// }
-
-// function render(){
-//     demoVideo1Context.drawImage(
-//         demoVideo1Info.images[demoVideo1Info.currentFrame]
-//         ,0
-//         ,0
-//     );
-// }
-
-
-
-
-function loco(){
-    gsap.registerPlugin(ScrollTrigger);
-
-// Using Locomotive Scroll from Locomotive https://github.com/locomotivemtl/locomotive-scroll
-
-const locoScroll = new LocomotiveScroll({
-  el: document.querySelector("#main"),
-  smooth: true
-});
-// each time Locomotive Scroll updates, tell ScrollTrigger to update too (sync positioning)
-locoScroll.on("scroll", ScrollTrigger.update);
-
-// tell ScrollTrigger to use these proxy methods for the "#main" element since Locomotive Scroll is hijacking things
-ScrollTrigger.scrollerProxy("#main", {
-  scrollTop(value) {
-    return arguments.length ? locoScroll.scrollTo(value, 0, 0) : locoScroll.scroll.instance.scroll.y;
-  }, // we don't have to define a scrollLeft because we're only scrolling vertically.
-  getBoundingClientRect() {
-    return {top: 0, left: 0, width: window.innerWidth, height: window.innerHeight};
+// LANGUAGE SECTION
+const content = {
+  english: {
+    content0: `SanChi`,
+    content1: `Why We Exist`,
+    content2: `Home`,
+    content3: `About`,
+    content4: `Language`,
+    content5: `Contact`,
+    content6: `Resources`,
+    content7: `Sanchi is a platform dedicated to the education and empowerment of girls. We exist to create opportunities for young girls to access quality education, nurturing their potential and enabling them to build a brighter future. By supporting Sanchi, you help break barriers to education, fostering self-confidence, independence, and a path out of poverty. Our mission is to empower every girl to dream, learn, and achieve, ensuring they have the tools to thrive and succeed in life.`,
   },
-  // LocomotiveScroll handles things completely differently on mobile devices - it doesn't even transform the container at all! So to get the correct behavior and avoid jitters, we should pin things with position: fixed on mobile. We sense it by checking to see if there's a transform applied to the container (the LocomotiveScroll-controlled element).
-  pinType: document.querySelector("#main").style.transform ? "transform" : "fixed"
-});
-
-// each time the window updates, we should refresh ScrollTrigger and then update LocomotiveScroll. 
-ScrollTrigger.addEventListener("refresh", () => locoScroll.update());
-
-// after everything is set up, refresh() ScrollTrigger and update LocomotiveScroll because padding may have been added for pinning, etc.
-ScrollTrigger.refresh();
-}
-loco()
-
-
-
-function canvas2(){
-  const canvas = document.querySelector("#page7>canvas");
-const context = canvas.getContext("2d");
-
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-
-window.addEventListener("resize", function () {
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-render();
-});
-
-function files(index) {
-var data = `
-
-https://thisismagma.com/assets/home/lore/seq/1.webp?2
-https://thisismagma.com/assets/home/lore/seq/2.webp?2
-https://thisismagma.com/assets/home/lore/seq/3.webp?2
-https://thisismagma.com/assets/home/lore/seq/4.webp?2
-https://thisismagma.com/assets/home/lore/seq/5.webp?2
-https://thisismagma.com/assets/home/lore/seq/6.webp?2
-https://thisismagma.com/assets/home/lore/seq/7.webp?2
-https://thisismagma.com/assets/home/lore/seq/8.webp?2
-https://thisismagma.com/assets/home/lore/seq/9.webp?2
-https://thisismagma.com/assets/home/lore/seq/10.webp?2
-https://thisismagma.com/assets/home/lore/seq/11.webp?2
-https://thisismagma.com/assets/home/lore/seq/12.webp?2
-https://thisismagma.com/assets/home/lore/seq/13.webp?2
-https://thisismagma.com/assets/home/lore/seq/14.webp?2
-https://thisismagma.com/assets/home/lore/seq/15.webp?2
-https://thisismagma.com/assets/home/lore/seq/16.webp?2
-https://thisismagma.com/assets/home/lore/seq/17.webp?2
-https://thisismagma.com/assets/home/lore/seq/18.webp?2
-https://thisismagma.com/assets/home/lore/seq/19.webp?2
-https://thisismagma.com/assets/home/lore/seq/20.webp?2
-https://thisismagma.com/assets/home/lore/seq/21.webp?2
-https://thisismagma.com/assets/home/lore/seq/22.webp?2
-https://thisismagma.com/assets/home/lore/seq/23.webp?2
-https://thisismagma.com/assets/home/lore/seq/24.webp?2
-https://thisismagma.com/assets/home/lore/seq/25.webp?2
-https://thisismagma.com/assets/home/lore/seq/26.webp?2
-https://thisismagma.com/assets/home/lore/seq/27.webp?2
-https://thisismagma.com/assets/home/lore/seq/28.webp?2
-https://thisismagma.com/assets/home/lore/seq/29.webp?2
-https://thisismagma.com/assets/home/lore/seq/30.webp?2
-https://thisismagma.com/assets/home/lore/seq/31.webp?2
-https://thisismagma.com/assets/home/lore/seq/32.webp?2
-https://thisismagma.com/assets/home/lore/seq/33.webp?2
-https://thisismagma.com/assets/home/lore/seq/34.webp?2
-https://thisismagma.com/assets/home/lore/seq/35.webp?2
-https://thisismagma.com/assets/home/lore/seq/36.webp?2
-https://thisismagma.com/assets/home/lore/seq/37.webp?2
-https://thisismagma.com/assets/home/lore/seq/38.webp?2
-https://thisismagma.com/assets/home/lore/seq/39.webp?2
-https://thisismagma.com/assets/home/lore/seq/40.webp?2
-https://thisismagma.com/assets/home/lore/seq/41.webp?2
-https://thisismagma.com/assets/home/lore/seq/42.webp?2
-https://thisismagma.com/assets/home/lore/seq/43.webp?2
-https://thisismagma.com/assets/home/lore/seq/44.webp?2
-https://thisismagma.com/assets/home/lore/seq/45.webp?2
-https://thisismagma.com/assets/home/lore/seq/46.webp?2
-https://thisismagma.com/assets/home/lore/seq/47.webp?2
-https://thisismagma.com/assets/home/lore/seq/48.webp?2
-https://thisismagma.com/assets/home/lore/seq/49.webp?2
-https://thisismagma.com/assets/home/lore/seq/50.webp?2
-https://thisismagma.com/assets/home/lore/seq/51.webp?2
-https://thisismagma.com/assets/home/lore/seq/52.webp?2
-https://thisismagma.com/assets/home/lore/seq/53.webp?2
-https://thisismagma.com/assets/home/lore/seq/54.webp?2
-https://thisismagma.com/assets/home/lore/seq/55.webp?2
-https://thisismagma.com/assets/home/lore/seq/56.webp?2
-https://thisismagma.com/assets/home/lore/seq/57.webp?2
-https://thisismagma.com/assets/home/lore/seq/58.webp?2
-https://thisismagma.com/assets/home/lore/seq/59.webp?2
-https://thisismagma.com/assets/home/lore/seq/60.webp?2
-https://thisismagma.com/assets/home/lore/seq/61.webp?2
-https://thisismagma.com/assets/home/lore/seq/62.webp?2
-https://thisismagma.com/assets/home/lore/seq/63.webp?2
-https://thisismagma.com/assets/home/lore/seq/64.webp?2
-https://thisismagma.com/assets/home/lore/seq/65.webp?2
-https://thisismagma.com/assets/home/lore/seq/66.webp?2
-https://thisismagma.com/assets/home/lore/seq/67.webp?2
-https://thisismagma.com/assets/home/lore/seq/68.webp?2
-https://thisismagma.com/assets/home/lore/seq/69.webp?2
-https://thisismagma.com/assets/home/lore/seq/70.webp?2
-https://thisismagma.com/assets/home/lore/seq/71.webp?2
-https://thisismagma.com/assets/home/lore/seq/72.webp?2
-https://thisismagma.com/assets/home/lore/seq/73.webp?2
-https://thisismagma.com/assets/home/lore/seq/74.webp?2
-https://thisismagma.com/assets/home/lore/seq/75.webp?2
-https://thisismagma.com/assets/home/lore/seq/76.webp?2
-https://thisismagma.com/assets/home/lore/seq/77.webp?2
-https://thisismagma.com/assets/home/lore/seq/78.webp?2
-https://thisismagma.com/assets/home/lore/seq/79.webp?2
-https://thisismagma.com/assets/home/lore/seq/80.webp?2
-https://thisismagma.com/assets/home/lore/seq/81.webp?2
-https://thisismagma.com/assets/home/lore/seq/82.webp?2
-https://thisismagma.com/assets/home/lore/seq/83.webp?2
-https://thisismagma.com/assets/home/lore/seq/84.webp?2
-https://thisismagma.com/assets/home/lore/seq/85.webp?2
-https://thisismagma.com/assets/home/lore/seq/86.webp?2
-https://thisismagma.com/assets/home/lore/seq/87.webp?2
-https://thisismagma.com/assets/home/lore/seq/88.webp?2
-https://thisismagma.com/assets/home/lore/seq/89.webp?2
-https://thisismagma.com/assets/home/lore/seq/90.webp?2
-https://thisismagma.com/assets/home/lore/seq/91.webp?2
-https://thisismagma.com/assets/home/lore/seq/92.webp?2
-https://thisismagma.com/assets/home/lore/seq/93.webp?2
-https://thisismagma.com/assets/home/lore/seq/94.webp?2
-https://thisismagma.com/assets/home/lore/seq/95.webp?2
-https://thisismagma.com/assets/home/lore/seq/96.webp?2
-https://thisismagma.com/assets/home/lore/seq/97.webp?2
-https://thisismagma.com/assets/home/lore/seq/98.webp?2
-https://thisismagma.com/assets/home/lore/seq/99.webp?2
-https://thisismagma.com/assets/home/lore/seq/100.webp?2
-https://thisismagma.com/assets/home/lore/seq/101.webp?2
-https://thisismagma.com/assets/home/lore/seq/102.webp?2
-https://thisismagma.com/assets/home/lore/seq/103.webp?2
-https://thisismagma.com/assets/home/lore/seq/104.webp?2
-https://thisismagma.com/assets/home/lore/seq/105.webp?2
-https://thisismagma.com/assets/home/lore/seq/106.webp?2
-https://thisismagma.com/assets/home/lore/seq/107.webp?2
-https://thisismagma.com/assets/home/lore/seq/108.webp?2
-https://thisismagma.com/assets/home/lore/seq/109.webp?2
-https://thisismagma.com/assets/home/lore/seq/110.webp?2
-https://thisismagma.com/assets/home/lore/seq/111.webp?2
-https://thisismagma.com/assets/home/lore/seq/112.webp?2
-https://thisismagma.com/assets/home/lore/seq/113.webp?2
-https://thisismagma.com/assets/home/lore/seq/114.webp?2
-https://thisismagma.com/assets/home/lore/seq/115.webp?2
-https://thisismagma.com/assets/home/lore/seq/116.webp?2
-https://thisismagma.com/assets/home/lore/seq/117.webp?2
-https://thisismagma.com/assets/home/lore/seq/118.webp?2
-https://thisismagma.com/assets/home/lore/seq/119.webp?2
-https://thisismagma.com/assets/home/lore/seq/120.webp?2
-https://thisismagma.com/assets/home/lore/seq/121.webp?2
-https://thisismagma.com/assets/home/lore/seq/122.webp?2
-https://thisismagma.com/assets/home/lore/seq/123.webp?2
-https://thisismagma.com/assets/home/lore/seq/124.webp?2
-https://thisismagma.com/assets/home/lore/seq/125.webp?2
-https://thisismagma.com/assets/home/lore/seq/126.webp?2
-https://thisismagma.com/assets/home/lore/seq/127.webp?2
-https://thisismagma.com/assets/home/lore/seq/128.webp?2
-https://thisismagma.com/assets/home/lore/seq/129.webp?2
-https://thisismagma.com/assets/home/lore/seq/130.webp?2
-https://thisismagma.com/assets/home/lore/seq/131.webp?2
-https://thisismagma.com/assets/home/lore/seq/132.webp?2
-https://thisismagma.com/assets/home/lore/seq/133.webp?2
-https://thisismagma.com/assets/home/lore/seq/134.webp?2
-https://thisismagma.com/assets/home/lore/seq/135.webp?2
-https://thisismagma.com/assets/home/lore/seq/136.webp?2
-
-`;
-return data.split("\n")[index];
-}
-
-const frameCount = 136;
-
-const images = [];
-const imageSeq = {
-frame: 1,
+  hindi: {
+    content0: `सांची`,
+    content1: `हमारा अस्तित्व क्यों है ?`,
+    content2: `घर`,
+    content3: `हमारे बारे में`,
+    content4: `भाषा`,
+    content5: `संपर्क`,
+    content6: `संसाधन`,
+    content7: `सांची लड़कियों की शिक्षा और सशक्तिकरण के लिए समर्पित एक मंच है। हम युवा लड़कियों के लिए गुणवत्तापूर्ण शिक्षा प्राप्त करने, उनकी क्षमता का पोषण करने और उन्हें एक उज्जवल भविष्य बनाने में सक्षम बनाने के अवसर पैदा करने के लिए मौजूद हैं। सांची का समर्थन करके, आप शिक्षा की बाधाओं को तोड़ने, आत्मविश्वास, स्वतंत्रता और गरीबी से बाहर निकलने का मार्ग प्रशस्त करने में मदद करते हैं। हमारा मिशन हर लड़की को सपने देखने, सीखने और हासिल करने के लिए सशक्त बनाना है, यह सुनिश्चित करना है कि उनके पास जीवन में आगे बढ़ने और सफल होने के लिए उपकरण हों।`,
+  },
+  marathi: {
+    content0: `सांची`,
+    content1: `आम्ही  का अस्तित्वात आहे ?`,
+    content2: `घर`,
+    content3: `आमच्याबद्दल`,
+    content4: `भाषा`,
+    content5: `संपर्क`,
+    content6:`संसाधने`,
+    content7: `सांची हे मुलींच्या शिक्षण आणि सक्षमीकरणासाठी वाहिलेले व्यासपीठ आहे. आम्ही तरुण मुलींना दर्जेदार शिक्षण मिळवण्याच्या संधी निर्माण करण्यासाठी, त्यांच्या क्षमतांचे पालनपोषण करण्यासाठी आणि त्यांना उज्ज्वल भविष्य घडवण्यासाठी सक्षम करण्यासाठी अस्तित्वात आहोत. सांचीला पाठिंबा देऊन, तुम्ही शिक्षणातील अडथळे दूर करण्यात, आत्मविश्वास, स्वातंत्र्य आणि गरिबीतून मार्ग काढण्यास मदत करता. प्रत्येक मुलीला स्वप्न पाहणे, शिकणे आणि साध्य करणे हे आमचे ध्येय आहे, त्यांच्याकडे जीवनात भरभराटीची आणि यशस्वी होण्याची साधने आहेत याची खात्री करणे.`,
+  },
 };
 
-for (let i = 0; i < frameCount; i++) {
-const img = new Image();
-img.src = files(i);
-images.push(img);
-}
+const fonts = {
+  english: "Poppins",
+  hindi: "Hind",
+  marathi: "Tiro Devanagari Marathi",
+};
 
-gsap.to(imageSeq, {
-frame: frameCount - 1,
-snap: "frame",
-ease: `none`,
-scrollTrigger: {
-  scrub: .5,
-  trigger: `#page7`,
-  start: `top top`,
-  end: `250% top`,
-  scroller: `#main`,
-},
-onUpdate: render,
+document.addEventListener("DOMContentLoaded", () => {
+  const languageToggle = document.getElementById("language-toggle");
+  languageToggle.addEventListener("click", toggleLanguageMenu);
+
+  const closingButton = document.getElementById("closing-span");
+  closingButton.addEventListener("click", toggleLanguageMenu);
+
+  const englishOption = document.getElementById("english-option");
+  const hindiOption = document.getElementById("hindi-option");
+  const marathiOption = document.getElementById("marathi-option");
+
+  englishOption.addEventListener("click", () => updateLanguage("english"));
+  hindiOption.addEventListener("click", () => updateLanguage("hindi"));
+  marathiOption.addEventListener("click", () => updateLanguage("marathi"));
+
+  const language = getCookie("language") || "english"; // Default to English
+  updateLanguage(language);
 });
 
-images[1].onload = render;
+// Toggle the visibility of the language menu (slide animation)
+function toggleLanguageMenu() {
+  const languageMenu = document.getElementById("languages-section");
 
-function render() {
-scaleImage(images[imageSeq.frame], context);
+  if (languageMenu.style.top === "0px") {
+    languageMenu.style.top = "-100vh"; // Hide it off-screen
+  } else {
+    languageMenu.style.top = "0"; // Slide it into view
+  }
 }
 
-function scaleImage(img, ctx) {
-var canvas = ctx.canvas;
-var hRatio = canvas.width / img.width;
-var vRatio = canvas.height / img.height;
-var ratio = Math.max(hRatio, vRatio);
-var centerShift_x = (canvas.width - img.width * ratio) / 2;
-var centerShift_y = (canvas.height - img.height * ratio) / 2;
-ctx.clearRect(0, 0, canvas.width, canvas.height);
-ctx.drawImage(
-  img,
-  0,
-  0,
-  img.width,
-  img.height,
-  centerShift_x,
-  centerShift_y,
-  img.width * ratio,
-  img.height * ratio
-);
-}
-ScrollTrigger.create({
+// Update the page content based on the selected language
+function updateLanguage(language) {
+  // Set the language preference in a cookie
+  document.cookie = "language=" + language;
 
-trigger: "#page7",
-pin: true,
-scroller: `#main`,
-start: `top top`,
-end: `250% top`,
-});
+  // Check if the content for the selected language exists
+  if (content[language]) {
+    // Update the innerHTML of elements based on language content
+    Object.keys(content[language]).forEach((key) => {
+      const element = document.getElementById(key);
+      if (element) {
+        element.innerHTML = content[language][key];
+      }
+    });
+
+    // Update the font family for the entire body based on the language
+    if (fonts[language]) {
+      document.body.style.fontFamily = fonts[language];
+    }
+
+    // Apply additional style changes specific to the language
+    updateStyleChanges(language);
+  }
+
+  // Hide the languages section and restore page overflow
+  const languagesSection = document.getElementById("languages-section");
+  if (languagesSection) {
+    languagesSection.style.top = "-100vh";
+  }
+  document.body.style.overflow = "auto";
+
+  // Adjust font size specifically for Marathi
+  const contentElement = document.getElementById("content1");
+  if (contentElement && language === "marathi") {
+    contentElement.style.fontSize = "11vw";
+    contentElement.style.wordSpacing = "2vw";
+    contentElement.style.fontWeight = "700";
+    contentElement.style.lineHeight = "13vw";
+  } else if (contentElement && language === "hindi") {
+    contentElement.style.fontSize = "14vw";
+    contentElement.style.wordSpacing = "2vw";
+    contentElement.style.fontWeight = "700";
+    contentElement.style.lineHeight = "17vw";
+  } else if (contentElement) {
+    // Reset to default font size for other languages
+    contentElement.style.fontSize = "";
+  }
 }
-canvas2()
+
+// Get the value of a cookie by name
+function getCookie(name) {
+  const cookies = document.cookie.split("; ").reduce((acc, cookie) => {
+    const [key, value] = cookie.split("=");
+    acc[key] = value;
+    return acc;
+  }, {});
+  return cookies[name];
+}
+
+function updateStyleChanges(language) {
+  const contentElement = document.getElementById("content1");
+
+  if (contentElement) {
+    if (language == "Marathi") {
+      contentElement.style.fontSize = "0vw";
+    }
+  } else {
+    console.warn("Element with id 'content1' not found.");
+  }
+}
 

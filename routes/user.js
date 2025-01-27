@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const fs = require('fs');
 
 // const nodemailer = require('nodemailer');
 const path = require('path');
@@ -7,6 +8,7 @@ const { Pool } = require('pg');
 const { createCanvas } = require("canvas");
 
 const { ensureAuthenticated } = require('../routes/auth');
+const multer = require('multer');
 
 const pool = new Pool({
     host: 'localhost',
@@ -33,16 +35,16 @@ router.get('/dashboard', ensureAuthenticated, (req, res) => {
             age: req.user.age,
             address: req.user.address
         });
-        
+
     } else {
         res.redirect('/auth/errorPage');
     }
 });
 
-router.get('/db_notes', async (req,res) => {
+router.get('/db_notes', async (req, res) => {
     let count = null;
     try {
-        let result = await pool.query(`SELECT array_length(note_content, 1) AS array_length, note_content, note_color FROM notes WHERE user_id = $1;`, [1]);
+        let result = await pool.query(`SELECT array_length(note_content, 1) AS array_length, note_content, note_color FROM notes WHERE user_id = $1;`, [req.user.id]);
 
         if (result.rowCount > 0) {
             count = result.rows[0].array_length;
@@ -50,24 +52,24 @@ router.get('/db_notes', async (req,res) => {
             let note_color_array = result.rows[0].note_color;
 
 
-            res.status(200).send({ 
+            res.status(200).send({
                 count: count,
                 note_content_array: note_content_array,
                 note_color_array: note_color_array
             });
-        } else if(result.rows.length == 0) {
-            res.status(200).send({ 
+        } else if (result.rows.length == 0) {
+            res.status(200).send({
                 no_rows: true
             });
-            
+
         }
     } catch (error) {
         console.error(error);
     }
 });
 
-router.post('/notes', async (req, res) => {
-    const userId = 1;
+router.post('/notes', ensureAuthenticated, async (req, res) => {
+    const userId = req.user.id;
     console.log(req.body);
 
     const result = await pool.query(`SELECT notes_set_id FROM notes WHERE user_id = $1`, [userId]);
@@ -143,6 +145,236 @@ function generateProfilePic(letter) {
     return canvas;
 }
 
+//For Audiobook Storage
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        let uploadPath;
+
+        // Check the file type to determine the folder
+        if (file.mimetype.startsWith('image/')) {
+            uploadPath = path.join(path.resolve(__dirname, '..'), '/public/files/uploads/thumbnail');
+        } else if (file.mimetype.startsWith('audio/')) {
+            uploadPath = path.join(path.resolve(__dirname, '..'), '/public/files/uploads/audio');
+        } else {
+            return cb(new Error('Invalid file type. Only audio and image files are allowed.'));
+        }
+
+        // Ensure the folder exists
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+
+        cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+        const filename_str = `${Date.now()}-${file.originalname}`;
+        //        filenames.push(filename_str); // Optional: Save filenames to an array
+        cb(null, filename_str);
+    },
+});
+
+const upload = multer({
+    storage,
+    fileFilter: (req, file, cb) => {
+        const allowedMimeTypes = [
+            'audio/mpeg',
+            'audio/wav',
+            'audio/mp3',
+            'image/png',
+            'image/jpeg',
+            'image/jpg',
+            'video/mp4',
+            'video/mpeg'
+        ];
+        if (allowedMimeTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid file type. Only MP3, WAV, PNG, and JPEG files are allowed.'));
+        }
+    },
+});
+
+router.post('/audio_book_upload', upload.fields([{ name: 'audio', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }]), async (req, res) => {
+    try {
+        console.log("User ID from audio_book_upload: ", req.user.id);
+        // Access uploaded files
+        const audioFile = req.files.audio ? req.files.audio[0].filename : null;
+        const audioThumbnail = req.files.thumbnail ? req.files.thumbnail[0].filename : null;
+
+        // Access title from form data
+        const { audioTitle } = req.body;
+
+        if (!audioFile || !audioThumbnail) {
+            return res.status(400).send('Audio and thumbnail are required.');
+        }
+
+        // Log the file names (with the timestamp)
+        console.log('Uploaded audio file:', audioFile);
+        console.log('Uploaded thumbnail file:', audioThumbnail);
+
+        // Insert into the database
+        const response = await pool.query(
+            `INSERT INTO audiobook (user_id, audio_book_title, thumb_path, audio_path) VALUES ($1, $2, $3, $4)`,
+            [req.user.id, audioTitle, audioThumbnail, audioFile]
+        );
+
+        console.log("Success: ", response.rowCount > 0);
+
+        res.status(200).send('Uploaded successfully!');
+    } catch (error) {
+        console.error('Error uploading audio book:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+router.get('/edit_subtitles', ensureAuthenticated, async (req, res) => {
+    const { bookTitle } = req.query;
+    const response = await pool.query("SELECT audio_path FROM audiobook WHERE audio_book_title=$1", [bookTitle]);
+
+    const audioFilePath = "http://localhost:3000/uploads/audio/" + response.rows[0].audio_path;
+    res.render('audioSubtitleEditor', { audioFileName: bookTitle, audioFilePath: audioFilePath });
+});
+
+// Route: Save subtitles
+router.post('/save-subtitles', async (req, res) => {
+    const { subtitles, bookTitle } = req.body;
+    console.log(subtitles);
+
+    if (!subtitles || subtitles.length === 0) {
+        return res.status(400).json({ error: 'No subtitles provided.' });
+    }
+
+    // Save subtitles to a file or database (example: JSON file)
+    const subtitleFilePath = path.join(path.resolve(__dirname, '..'), `/public/files/uploads/subtitles`, `${bookTitle}.json`);
+    fs.writeFile(subtitleFilePath, JSON.stringify(subtitles, null, 2), (err) => {
+        if (err) {
+            console.error('Error saving subtitles:', err);
+            return res.status(500).json({ error: 'Failed to save subtitles.' });
+        }
+    });
+
+    const response = await pool.query(`
+        UPDATE audiobook
+        SET subtitles_path = $1
+        WHERE audio_book_title = $2
+        RETURNING *
+    `, [`${bookTitle}.json`, bookTitle]);
+
+    if (response.rowCount > 0)
+        res.json({ message: 'Subtitles saved Successfully!', subtitleFilePath });
+    else
+        res.json({ message: 'Subtitles not Saved Successfully!', subtitleFilePath });
+});
+
+router.get("/audio_player", ensureAuthenticated, async (req, res) => {
+    const response = await pool.query("SELECT audio_path, subtitles_path FROM audiobook WHERE audio_book_title=$1", [req.query.bookTitle]);
+
+    if (response.rowCount > 0) {
+        res.render(`audioplayer`, {
+            filename: `${response.rows[0].audio_path}`,
+            subtitles_path: `${response.rows[0].subtitles_path}`
+        });
+    } else {
+        res.json("No such file exists");
+    }
+})
+
+//For updating after submitting
+router.get("/fetch_after_upload", ensureAuthenticated, async (req, res) => {
+    console.log("req.query.bookTitle: ", req.query.bookTitle);
+    const response = await pool.query("SELECT * FROM audiobook WHERE audio_book_title=$1", [req.query.bookTitle]);
+
+    console.log(response.rows);
+
+    if (response.rowCount > 0) {
+        res.json(response.rows);
+    } else {
+        res.json([
+            {
+                no_books_found: true
+            }
+        ]);
+    }
+});
+
+//For fetching on initialization
+router.get("/audiobooks", ensureAuthenticated, async (req, res) => {
+    const response = await pool.query("SELECT * FROM audiobook WHERE user_id=$1 AND subtitles_path IS NULL", [req.user.id]);
+
+    if (response.rowCount > 0) {
+        res.json(response.rows);
+    } else {
+        res.json([
+            {
+                no_books_found: true
+            }
+        ]);
+    }
+});
+
+const videoUpload = require('../custom_modules/processVideo');
+
+router.post("/video_upload", videoUpload.upload.fields([
+    { name: 'videoFile', maxCount: 1 },
+    { name: 'videoThumbnail', maxCount: 1 }
+]), async (req, res, next) => {
+    await videoUpload.processVideo(req, res);  // Ensure it completes before moving on
+    console.log("Returned?");
+    return next();
+}, async (req, res) => {
+    console.log("Here");
+    const { videoTitle, videoDescription, videoCategory } = req.body;
+    console.log("req.files: ",req.files);
+
+    // Access uploaded files
+    const dirPath = "/uploads/video";
+    const videoPath = req.files.videoFile ? (`${dirPath}/${videoTitle}/segments/index.m3u8`)  : null;
+    const videoThumbnail = req.files.videoThumbnail ? (`${dirPath}/${videoTitle}/videoThumbnail.jpg`) : null;
+    const videoMP4 = req.files.videoFile ? (`${dirPath}/${videoTitle}/${videoTitle}.mp4`) : null;
+
+    // if (!req.file.videoFile[0] || !req.file.videoThumbnail[0]) {
+    //     return res.status(400).send('Audio and thumbnail are required.');
+    // }
+
+    const fetchName = await pool.query(`SELECT CONCAT(first_name, ' ', last_name) AS name FROM signup WHERE id=$1`, [req.user.id]);
+
+    const name_of_user = fetchName.rows[0].name;
+
+    // Insert into the database
+    const response = await pool.query(
+        `INSERT INTO videos (
+            user_id, 
+            video_title, 
+            video_thumbnail, 
+            video_path, 
+            video_description, 
+            video_mp4_path, 
+            category, 
+            name_of_user) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [req.user.id, videoTitle, videoThumbnail, videoPath, videoDescription, videoMP4, videoCategory, name_of_user]
+    );
+
+    if(response.rowCount > 0) {
+        res.status(200).send('Uploaded successfully!');
+    } else {
+        res.status(500).send("Database Error");
+    }
+});
+
+router.get('/videoplayer', async(req,res) => {
+    const requestedVideo = req.query.videoTitle;
+
+    const response = await pool.query("SELECT * FROM videos WHERE video_title=$1", [requestedVideo])
+
+    res.render("videoplayer", {
+        videomp4src : response.rows[0].video_mp4_path,
+        video_thumbnail_src: response.rows[0].video_thumbnail,
+        video_title: response.rows[0].video_title,
+        subtitles_path: null
+    });
+});
+
 //Defining some Middleware
 // Route to generate profile picture
 router.get("/profile-pic", ensureAuthenticated, (req, res) => {
@@ -154,10 +386,10 @@ router.get("/profile-pic", ensureAuthenticated, (req, res) => {
     canvas.createPNGStream().pipe(res);
 });
 
-router.post('/deleteNote', async (req,res) => {
+router.post('/deleteNote', async (req, res) => {
     const { note_id } = req.body;
 
-    if(note_id >= 0) {
+    if (note_id >= 0) {
         pool.query(`UPDATE notes
             SET note_content = remove_array_element_by_index(note_content, $1),
                 note_color = remove_array_element_by_index(note_color, $1)

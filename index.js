@@ -12,6 +12,7 @@ const { Pool } = pg;
 const app = express();
 require('dotenv').config(); // Load environment variables
 
+app.set("view engine", "ejs");
 
 /*HELPER FUNCTIONS to define the Passport checking Procedure*/
 // Fetch user by email
@@ -59,7 +60,7 @@ const pool = new Pool({
 
 // Middleware to protect certain static files
 app.use((req, res, next) => {
-    const restrictedPaths = ['/newlogin.html', '/signup.html', '/dashboard.html', '/emailVerification.ejs']; //Purely for Good User Experience
+    const restrictedPaths = ['/newlogin.html', '/signup.html', '/dashboard.html', '/emailVerification.ejs','/resetPassword.html']; //Purely for Good User Experience
 
     if (restrictedPaths.some(path => req.originalUrl.includes(path))) {
         if (req.session.partialAuth == true) { //User has not verifed yet
@@ -68,6 +69,8 @@ app.use((req, res, next) => {
             return res.redirect('/user/dashboard');
         } else if (req.originalUrl.includes('/dashboard.html')) {
             return res.redirect('/user/dashboard');
+        } else if (req.originalUrl.includes('/audioPlayer.html')) {
+            return res.redirect('/user/audio-play-demo');
         }
     }
     next();
@@ -86,6 +89,9 @@ app.use('/contact', contactRouter);
 
 const userRouter = require('./routes/user');
 app.use('/user', userRouter);
+
+const resourceRouter = require('./routes/resources');
+app.use('/resource', resourceRouter);
 
 // Start the server
 app.listen(3000, () => console.log("Server running at http://localhost:3000"));
